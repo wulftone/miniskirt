@@ -15,6 +15,8 @@ class Miniskirt < Struct.new(:__klass__)
   undef_method *instance_methods.grep(/^(?!__|object_id)/)
   @@attrs = {} and private_class_method :new
 
+  class NoFactoryError < StandardError; end
+
   class << self
     def define name, options = {}
       @@attrs[name = name.to_s] = [{}, options] and yield new(name)
@@ -22,7 +24,11 @@ class Miniskirt < Struct.new(:__klass__)
 
     def build name, attrs = {}
       (h, opts, n = @@attrs[name = name.to_s]) and m = opts[:class] || name
-      p = opts[:parent] and (h, m = @@attrs[p = p.to_s][0].merge(h), p)
+      begin
+        p = opts[:parent] and (h, m = @@attrs[p = p.to_s][0].merge(h), p)
+      rescue NoMethodError
+        raise NoFactoryError, "Something went terribly wrong, you may not have defined the factory for ':#{name}', or forgot to load it."
+      end
       (m = m.is_a?(Class) ? m : m.to_s.camelize.constantize).new.tap do |r|
         attrs.symbolize_keys!.reverse_update(h).each do |k, v|
           r.send "#{k}=", case v when String # Sequence and interpolate.

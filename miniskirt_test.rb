@@ -8,6 +8,11 @@ class MiniskirtTest < Test::Unit::TestCase
     assert_not_nil factories["blog_entry"]
   end
 
+  def test_should_raise_pretty_exception_when_factory_not_defined
+    assert_raises(Miniskirt::NoFactoryError) { Factory.build :bloop }
+    assert_raises(Miniskirt::NoFactoryError) { Factory.create :bloop }
+  end
+
   def test_should_build_object
     user = Factory.build :user
     assert_instance_of User, user
